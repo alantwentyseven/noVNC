@@ -1193,7 +1193,6 @@ describe('Remote Frame Buffer Protocol Client', function() {
                 client.set_onFBUReceive(sinon.spy());
                 var rect_info = { x: 8, y: 11, width: 27, height: 32, encoding: 0x02, encodingName: 'RRE' };
                 send_fbu_msg([rect_info], [[]], client);
-
                 var spy = client.get_onFBUReceive();
                 expect(spy).to.have.been.calledOnce;
                 expect(spy).to.have.been.calledWith(sinon.match.any, rect_info);

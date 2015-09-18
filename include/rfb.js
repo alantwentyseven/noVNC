@@ -33,6 +33,7 @@ var RFB;
         this._rfb_auth_scheme = '';
 
         this._rfb_tightvnc = false;
+
         this._rfb_xvp_ver = 0;
 
         // In preference order
@@ -86,7 +87,11 @@ var RFB;
             zlib: []                // TIGHT zlib streams
         };
 
-        this._pixelFormat = {};
+        //alantwentyseven: set default value for Bpp to 4, as we had prior to pixelformat implementation.
+        this._pixelFormat = {
+            Bpp: 4
+        };
+
         this._fb_width = 0;
         this._fb_height = 0;
         this._fb_name = "";
@@ -903,7 +908,6 @@ var RFB;
 
             // NB(directxman12): we don't want to call any callbacks or print messages until
             //                   *after* we're past the point where we could backtrack
-
             /* Connection name/title */
             var name_length = this._sock.rQshift32();
             if (this._sock.rQwait('server init name', name_length, 24)) { return false; }
@@ -1015,7 +1019,7 @@ var RFB;
                 return this._fail('server claims greater depth than sum of RGB maximums');
             }
 
-            RFB.messages.clientEncodings(this._sock, this._encodings, this._local_cursor, this._true_color);
+            RFB.messages.clientEncodings(this._sock, this._encodings, this._local_cursor, this._pixelFormat.true_color);
             RFB.messages.fbUpdateRequests(this._sock, this._display.getCleanDirtyReset(), this._fb_width, this._fb_height);
 
             this._timing.fbu_rt_start = (new Date()).getTime();
@@ -1203,7 +1207,7 @@ var RFB;
                     console.log("missed " + this._FBU.encoding + ": " + handler);
                     ret = this._encHandlers[this._FBU.encoding]();
                 }
-
+                
                 now = (new Date()).getTime();
                 this._timing.cur_fbu += (now - this._timing.last_fbu);
 
@@ -1237,7 +1241,7 @@ var RFB;
                         this._timing.fbu_rt_start = 0;
                     }
                 }
-
+                
                 if (!ret) { return ret; }  // need more data
             }
 
@@ -1252,27 +1256,47 @@ var RFB;
 
         // input:  byte stream in pixel format
         // output: RGB
-        _convert_color: function (arr, Bpp) {
+        _convert_color: function (arr, bRev, Bpp) {
             if (Bpp === undefined)
                 Bpp = this._pixelFormat.Bpp;
-
             if (!this._convertColor
                     // HACK? Xtightvnc needs this and I have no idea why
                     || (this._FBU.encoding === 0x07 && this._pixelFormat.depth === 24)) {
                 switch (Bpp) {
                 case 4:
-                    for (var i = arr.length; i > 0; i -= 4) {
-                        arr.splice(i - 1, 1); // convert from RGBX to RGB
+                    var newArr = new Uint8Array((arr.length / 4 ) * 3); //converting 4 to 3 Bpp                
+                    var pos = 0;
+                    for(var i = 0; i<arr.length; i++)
+                    {
+                        if((i+1) % 4 > 0)
+                        {                  
+                            newArr[pos] = arr[i];
+                            pos++;
+                        }
                     }
+                    arr = newArr;
                 case 3:
-                    return arr;
+                    //do nothing, already 3, or has been converted and fallen through from 4.
+                    break;
                 default:
                     Util.Error('convert color disabled, but Bpp is not 3 or 4!');
                 }
+
+                if(bRev)
+                {
+                    var a = new Uint8Array(arr);
+                    for (var i = 0; i< arr.length; i+=3) {
+                        a[i] = arr[i+2];
+                        a[i+2] = arr[i];
+                    }
+                    arr = a;
+                }
+
+                return arr;
             }
 
-            var data = [];
-
+            var data = new Uint8Array(arr.length * (3 / Bpp));
+            var pos = 0;
             for (var i = 0; i < arr.length; i += Bpp) {
                 var pix = 0;
 
@@ -1284,14 +1308,24 @@ var RFB;
                     }
                 }
 
-                data.push(((pix >>> this._pixelFormat.red_shift) & this._pixelFormat.red_max)
-                            * (256/(this._pixelFormat.red_max + 1)));
-                data.push(((pix >>> this._pixelFormat.green_shift) & this._pixelFormat.green_max)
-                            * (256/(this._pixelFormat.green_max + 1)));
-                data.push(((pix >>> this._pixelFormat.blue_shift) & this._pixelFormat.blue_max)
-                            * (256/(this._pixelFormat.blue_max + 1)));
+                if(bRev) {
+                    data[pos+2] = ((pix >>> this._pixelFormat.red_shift) & this._pixelFormat.red_max)
+                                * (256/(this._pixelFormat.red_max + 1));
+                    data[pos+1] = ((pix >>> this._pixelFormat.green_shift) & this._pixelFormat.green_max)
+                                * (256/(this._pixelFormat.green_max + 1));
+                    data[pos] = ((pix >>> this._pixelFormat.blue_shift) & this._pixelFormat.blue_max)
+                                * (256/(this._pixelFormat.blue_max + 1));
+                }
+                else {
+                    data[pos] = ((pix >>> this._pixelFormat.red_shift) & this._pixelFormat.red_max)
+                                * (256/(this._pixelFormat.red_max + 1));
+                    data[pos+1] = ((pix >>> this._pixelFormat.green_shift) & this._pixelFormat.green_max)
+                                * (256/(this._pixelFormat.green_max + 1));
+                    data[pos+2] = ((pix >>> this._pixelFormat.blue_shift) & this._pixelFormat.blue_max)
+                                * (256/(this._pixelFormat.blue_max + 1));
+                }
+                pos+=3;
             }
-
             return data;
         },
     };
@@ -1542,14 +1576,11 @@ var RFB;
             var curr_height = Math.min(this._FBU.lines,
                                        Math.floor(this._sock.rQlen() / (this._FBU.width * this._pixelFormat.Bpp)));
 
-            this._display.renderQ_push({
-                'type': 'blit',
-                'data': this._convert_color(this._sock.rQshiftBytes(curr_height * this._FBU.width * this._pixelFormat.Bpp)),
-                'x': this._FBU.x,
-                'y': cur_y,
-                'width': this._FBU.width,
-                'height': curr_height
-            });
+            this._display.blitImage(
+                this._FBU.x, cur_y, this._FBU.width, curr_height, 
+                this._convert_color(this._sock.rQshiftBytes(curr_height * this._FBU.width * this._pixelFormat.Bpp)),
+                0, true //offset, from queue 
+            );
 
             this._FBU.lines -= curr_height;
 
@@ -1581,12 +1612,12 @@ var RFB;
                 this._FBU.bytes = 4 + this._pixelFormat.Bpp;
                 if (this._sock.rQwait("RRE", 4 + this._pixelFormat.Bpp)) { return false; }
                 this._FBU.subrects = this._sock.rQshift32();
-                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp)).reverse();  // Background
+                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp), true);  // Background
                 this._display.fillRect(this._FBU.x, this._FBU.y, this._FBU.width, this._FBU.height, color);
             }
 
             while (this._FBU.subrects > 0 && this._sock.rQlen() >= (this._pixelFormat.Bpp + 8)) {
-                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp)).reverse();
+                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp), true);
                 var x = this._sock.rQshift16();
                 var y = this._sock.rQshift16();
                 var width = this._sock.rQshift16();
@@ -1670,22 +1701,23 @@ var RFB;
                         this._display.fillRect(x, y, w, h, this._FBU.background);
                     }
                 } else if (this._FBU.subencoding & 0x01) {  // Raw
-                    this._display.renderQ_push({
-                        'type': 'blit',
-                        'data': this._convert_color(rQ.slice(rQi, rQi + this._FBU.bytes - 1)),
-                        'x': x,
-                        'y': y,
-                        'width': w,
-                        'height': h
-                    });
+                    this._display.blitImage(x, y, w, h, this._convert_color(this._sock.rQslice(rQi, rQi + this._FBU.bytes - 1)), rQi);
                     rQi += this._FBU.bytes - 1;
                 } else {
                     if (this._FBU.subencoding & 0x02) {  // Background
-                        this._FBU.background = this._convert_color(rQ.slice(rQi, rQi + this._pixelFormat.Bpp)).reverse();
+                        if (this._pixelFormat.Bpp == 1) {
+                            this._FBU.background = this._convert_color(rQ[rQi], true);
+                        } else {
+                            this._FBU.background = this._convert_color([rQ[rQi], rQ[rQi + 1], rQ[rQi + 2], rQ[rQi + 3]],true);
+                        }
                         rQi += this._pixelFormat.Bpp;
                     }
                     if (this._FBU.subencoding & 0x04) {  // Foreground
-                         this._FBU.foreground = this._convert_color(rQ.slice(rQi, rQi + this._pixelFormat.Bpp)).reverse();
+                        if (this._pixelFormat.Bpp == 1) {
+                            this._FBU.foreground = this._convert_color(rQ[rQi], true);
+                        } else {
+                            this._FBU.foreground = this._convert_color([rQ[rQi], rQ[rQi + 1], rQ[rQi + 2], rQ[rQi + 3]],true);
+                        }
                         rQi += this._pixelFormat.Bpp;
                     }
 
@@ -1697,7 +1729,7 @@ var RFB;
                         for (var s = 0; s < subrects; s++) {
                             var color;
                             if (this._FBU.subencoding & 0x10) {  // SubrectsColoured
-                                color = this._convert_color(rQ.slice(rQi, rQi + this._pixelFormat.Bpp)).reverse();
+                                color = this._convert_color(this._sock.rQslice(rQi, rQi + this._pixelFormat.Bpp), true);
                                 rQi += this._pixelFormat.Bpp;
                             } else {
                                 color = this._FBU.foreground;
@@ -1901,7 +1933,7 @@ var RFB;
                 this._sock.rQskipBytes(3);
                 //var palette = this._sock.rQshiftBytes(paletteSize);
                 this._sock.rQshiftTo(this._paletteBuff, paletteSize);
-                var palette = this._convert_color(this._paletteBuff, this._pixelFormat.Bdepth);
+                var palette = this._convert_color(this._paletteBuff, false, this._pixelFormat.Bdepth);
                 this._sock.rQskipBytes(cl_header);
 
                 if (raw) {
@@ -1960,7 +1992,7 @@ var RFB;
 
                 this._display.blitImage(
                     this._FBU.x, this._FBU.y, this._FBU.width, this._FBU.height, 
-                    this._convert_color(data, this._pixelFormat.Bdepth), 
+                    this._convert_color(data, false, this._pixelFormat.Bdepth), 
                     0, false
                 );
 
@@ -2013,7 +2045,7 @@ var RFB;
                     // skip ctl byte
                     this._display.fillRect(
                         this._FBU.x, this._FBU.y, this._FBU.width, this._FBU.height, 
-                        this._convert_color([rQ[rQi + 3], rQ[rQi + 2], rQ[rQi + 1]], this._pixelFormat.Bdepth).reverse(), 
+                        this._convert_color([rQ[rQi + 3], rQ[rQi + 2], rQ[rQi + 1]], false, this._pixelFormat.Bdepth), 
                         false
                     );
                     this._sock.rQskipBytes(4);
