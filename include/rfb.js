@@ -1291,7 +1291,6 @@ var RFB;
                     }
                     arr = a;
                 }
-
                 return arr;
             }
 
@@ -1641,6 +1640,18 @@ var RFB;
             var rQ = this._sock.get_rQ();
             var rQi = this._sock.get_rQi();
 
+            //alantwentyseven: uint8array.slice not always available (eg phantom js), and we are
+            // keeping the rQ locally, so sock.rQslice not useful either.
+            var sliceUint8 = function(s, len)
+            {
+                var sliced = new Uint8Array(len);
+                for(var t = s; t<s + len; t++)
+                {
+                    sliced[t-s] = rQ[t];
+                }
+                return sliced;
+            };
+
             if (this._FBU.tiles === 0) {
                 this._FBU.tiles_x = Math.ceil(this._FBU.width / 16);
                 this._FBU.tiles_y = Math.ceil(this._FBU.height / 16);
@@ -1701,7 +1712,7 @@ var RFB;
                         this._display.fillRect(x, y, w, h, this._FBU.background);
                     }
                 } else if (this._FBU.subencoding & 0x01) {  // Raw
-                    this._display.blitImage(x, y, w, h, this._convert_color(this._sock.rQslice(rQi, rQi + this._FBU.bytes - 1)), rQi);
+                    this._display.blitImage(x, y, w, h, this._convert_color(sliceUint8(rQi, this._FBU.bytes-1)),0);
                     rQi += this._FBU.bytes - 1;
                 } else {
                     if (this._FBU.subencoding & 0x02) {  // Background
@@ -1729,7 +1740,7 @@ var RFB;
                         for (var s = 0; s < subrects; s++) {
                             var color;
                             if (this._FBU.subencoding & 0x10) {  // SubrectsColoured
-                                color = this._convert_color(this._sock.rQslice(rQi, rQi + this._pixelFormat.Bpp), true);
+                                color = this._convert_color(sliceUint8(rQi, this._pixelFormat.Bpp), true);
                                 rQi += this._pixelFormat.Bpp;
                             } else {
                                 color = this._FBU.foreground;
