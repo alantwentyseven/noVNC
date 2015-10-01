@@ -1276,10 +1276,10 @@ describe('Remote Frame Buffer Protocol Client', function() {
                                     { x: 0, y: 2, width: 4, height: 1, encoding: 0x00 },
                                     { x: 0, y: 3, width: 4, height: 1, encoding: 0x00 }];
                         var rects = [
-                            [0xf8, 0x00, 0x00, 0, 0x00, 0xf8, 0x00, 0, 0x00, 0xf8, 0x00, 0, 0xf8, 0x00, 0x00, 0],
-                            [0x00, 0x00, 0xf8, 0, 0x00, 0x00, 0xf8, 0, 0x00, 0x00, 0xf8, 0, 0x00, 0x00, 0xf8, 0],
-                            [0xe8, 0x00, 0xf8, 0, 0x00, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0],
-                            [0xe8, 0x00, 0xf8, 0, 0x00, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0]];
+                            [0x00, 0x00, 0xf8, 0, 0x00, 0xf8, 0x00, 0, 0x00, 0xf8, 0x00, 0, 0x00, 0x00, 0xf8, 0],
+                            [0xf8, 0x00, 0x00, 0, 0xf8, 0x00, 0x00, 0, 0xf8, 0x00, 0x00, 0, 0xf8, 0x00, 0x00, 0],
+                            [0xf8, 0x00, 0xe8, 0, 0xf8, 0xe8, 0x00, 0, 0xf8, 0xe8, 0xa8, 0, 0xf8, 0xe8, 0xa8, 0],
+                            [0xf8, 0x00, 0xe8, 0, 0xf8, 0xe8, 0x00, 0, 0xf8, 0xe8, 0xa8, 0, 0xf8, 0xe8, 0xa8, 0]];
                         send_fbu_msg(info, rects, client);
                         expect(client._display).to.have.displayed(target_data);
                     });
@@ -1298,10 +1298,10 @@ describe('Remote Frame Buffer Protocol Client', function() {
                                     { x: 0, y: 2, width: 4, height: 1, encoding: 0x00 },
                                     { x: 0, y: 3, width: 4, height: 1, encoding: 0x00 }];
                         var rects = [
-                            [0x00, 0x00, 0xf8, 0, 0x00, 0xf8, 0x00, 0, 0x00, 0xf8, 0x00, 0, 0x00, 0x00, 0xf8, 0],
-                            [0xf8, 0x00, 0x00, 0, 0xf8, 0x00, 0x00, 0, 0xf8, 0x00, 0x00, 0, 0xf8, 0x00, 0x00, 0],
-                            [0xf8, 0x00, 0xe8, 0, 0xf8, 0xe8, 0x00, 0, 0xf8, 0xe8, 0xa8, 0, 0xf8, 0xe8, 0xa8, 0],
-                            [0xf8, 0x00, 0xe8, 0, 0xf8, 0xe8, 0x00, 0, 0xf8, 0xe8, 0xa8, 0, 0xf8, 0xe8, 0xa8, 0]];
+                            [0xf8, 0x00, 0x00, 0, 0x00, 0xf8, 0x00, 0, 0x00, 0xf8, 0x00, 0, 0xf8, 0x00, 0x00, 0],
+                            [0x00, 0x00, 0xf8, 0, 0x00, 0x00, 0xf8, 0, 0x00, 0x00, 0xf8, 0, 0x00, 0x00, 0xf8, 0],
+                            [0xe8, 0x00, 0xf8, 0, 0x00, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0],
+                            [0xe8, 0x00, 0xf8, 0, 0x00, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0, 0xa8, 0xe8, 0xf8, 0]];
                         send_fbu_msg(info, rects, client);
                         expect(client._display).to.have.displayed(target_data);
                     });
@@ -1321,11 +1321,12 @@ describe('Remote Frame Buffer Protocol Client', function() {
                                     { x: 2, y: 0, width: 2, height: 2, encoding: 0x00 },
                                     { x: 0, y: 2, width: 4, height: 1, encoding: 0x00 },
                                     { x: 0, y: 3, width: 4, height: 1, encoding: 0x00 }];
+
                         var rects = [
-                            [0x00, 0x7c, 0xe0, 0x03, 0xe0, 0x03, 0x00, 0x7c],
-                            [0x1f, 0x00, 0x1f, 0x00, 0x1f, 0x00, 0x1f, 0x00],
-                            [0x1f, 0x74, 0xbf, 0x03, 0xbf, 0x57, 0xbf, 0x57],
-                            [0x1f, 0x74, 0xbf, 0x03, 0xbf, 0x57, 0xbf, 0x57]];
+                            [0x1f, 0x00, 0xe0, 0x03, 0xe0, 0x03, 0x1f, 0x00],
+                            [0x00, 0xfc, 0x00, 0xfc, 0x00, 0xfc, 0x00, 0xfc],
+                            [0x1d, 0xfc, 0xa0, 0x7f, 0xb5, 0x7f, 0xb5, 0x7f],
+                            [0x1d, 0xfc, 0xa0, 0x7f, 0xb5, 0x7f, 0xb5, 0x7f]];
                         send_fbu_msg(info, rects, client);
                         expect(client._display).to.have.displayed(target_data);
                     });
@@ -1346,10 +1347,10 @@ describe('Remote Frame Buffer Protocol Client', function() {
                                     { x: 0, y: 2, width: 4, height: 1, encoding: 0x00 },
                                     { x: 0, y: 3, width: 4, height: 1, encoding: 0x00 }];
                         var rects = [
-                            [0x7c, 0x00, 0x03, 0xe0, 0x03, 0xe0, 0x7c, 0x00],
-                            [0x00, 0x1f, 0x00, 0x1f, 0x00, 0x1f, 0x00, 0x1f],
-                            [0x74, 0x1f, 0x03, 0xbf, 0x57, 0xbf, 0x57, 0xbf],
-                            [0x74, 0x1f, 0x03, 0xbf, 0x57, 0xbf, 0x57, 0xbf]];
+                            [0x00, 0x1f, 0x03, 0xe0, 0x03, 0xe0, 0x00, 0x1f],
+                            [0xfc, 0x00, 0xfc, 0x00, 0xfc, 0x00, 0xfc, 0x00],
+                            [0xfc, 0x1d, 0x7f, 0xa0, 0x7f, 0xb5, 0x7f, 0xb5],
+                            [0xfc, 0x1d, 0x7f, 0xa0, 0x7f, 0xb5, 0x7f, 0xb5]];
                         send_fbu_msg(info, rects, client);
                         expect(client._display).to.have.displayed(target_data);
                     });
@@ -1378,17 +1379,17 @@ describe('Remote Frame Buffer Protocol Client', function() {
                     var rect = [];
                     rect.push32(2); // 2 subrects
                     rect.push32(0xff00ff); // becomes 00ff00ff --> #00FF00 bg color
-                    rect.push(0x00); // becomes 0000ffff --> #0000FF color
+                    rect.push(0xff); // becomes ff0000ff --> #0000FF color
                     rect.push(0x00);
-                    rect.push(0xff);
+                    rect.push(0x00);
                     rect.push(0xff);
                     rect.push16(0); // x: 0
                     rect.push16(0); // y: 0
                     rect.push16(2); // width: 2
                     rect.push16(2); // height: 2
-                    rect.push(0x00); // becomes 0000ffff --> #0000FF color
+                    rect.push(0xff); // becomes ff0000ff --> #0000FF color
                     rect.push(0x00);
-                    rect.push(0xff);
+                    rect.push(0x00);
                     rect.push(0xff);
                     rect.push16(2); // x: 2
                     rect.push16(2); // y: 2
@@ -1422,9 +1423,9 @@ describe('Remote Frame Buffer Protocol Client', function() {
                         var rect = [];
                         rect.push(0x02 | 0x04 | 0x08); // bg spec, fg spec, anysubrects
                         rect.push32(0xff00ff); // becomes 00ff00ff --> #00FF00 bg color
-                        rect.push(0x00); // becomes 0000ffff --> #0000FF fg color
+                        rect.push(0xff); // becomes ff0000ff --> #0000FF fg color
                         rect.push(0x00);
-                        rect.push(0xff);
+                        rect.push(0x00);
                         rect.push(0xff);
                         rect.push(2); // 2 subrects
                         rect.push(0); // x: 0, y: 0
@@ -1440,9 +1441,9 @@ describe('Remote Frame Buffer Protocol Client', function() {
                         var rect = [];
                         rect.push(0x01); // raw
                         for (var i = 0; i < target_data.length; i += 4) {
-                            rect.push(target_data[i]);
-                            rect.push(target_data[i + 1]);
                             rect.push(target_data[i + 2]);
+                            rect.push(target_data[i + 1]);
+                            rect.push(target_data[i]);
                             rect.push(target_data[i + 3]);
                         }
                         send_fbu_msg(info, [rect], client);
@@ -1518,9 +1519,9 @@ describe('Remote Frame Buffer Protocol Client', function() {
                         var rect = [];
                         rect.push(0x02 | 0x04 | 0x08); // bg spec, fg spec, anysubrects
                         rect.push32(0xff00ff); // becomes 00ff00ff --> #00FF00 bg color
-                        rect.push(0x00); // becomes 0000ffff --> #0000FF fg color
+                        rect.push(0xff); // becomes ff0000ff --> #0000FF fg color
                         rect.push(0x00);
-                        rect.push(0xff);
+                        rect.push(0x00);
                         rect.push(0xff);
                         rect.push(8); // 8 subrects
                         var i;

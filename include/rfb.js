@@ -1298,7 +1298,6 @@ var RFB;
             var pos = 0;
             for (var i = 0; i < arr.length; i += Bpp) {
                 var pix = 0;
-
                 for (var j = 0; j < Bpp; j++) {
                     if (this._pixelFormat.big_endian) {
                         pix = (pix << 8) | arr[i + j];
@@ -1574,10 +1573,9 @@ var RFB;
             var cur_y = this._FBU.y + (this._FBU.height - this._FBU.lines);
             var curr_height = Math.min(this._FBU.lines,
                                        Math.floor(this._sock.rQlen() / (this._FBU.width * this._pixelFormat.Bpp)));
-
             this._display.blitImage(
                 this._FBU.x, cur_y, this._FBU.width, curr_height, 
-                this._convert_color(this._sock.rQshiftBytes(curr_height * this._FBU.width * this._pixelFormat.Bpp)),
+                this._convert_color(this._sock.rQshiftBytes(curr_height * this._FBU.width * this._pixelFormat.Bpp),true),
                 0, true //offset, from queue 
             );
 
@@ -1611,12 +1609,12 @@ var RFB;
                 this._FBU.bytes = 4 + this._pixelFormat.Bpp;
                 if (this._sock.rQwait("RRE", 4 + this._pixelFormat.Bpp)) { return false; }
                 this._FBU.subrects = this._sock.rQshift32();
-                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp), true);  // Background
+                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp));  // Background
                 this._display.fillRect(this._FBU.x, this._FBU.y, this._FBU.width, this._FBU.height, color);
             }
 
             while (this._FBU.subrects > 0 && this._sock.rQlen() >= (this._pixelFormat.Bpp + 8)) {
-                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp), true);
+                color = this._convert_color(this._sock.rQshiftBytes(this._pixelFormat.Bpp));
                 var x = this._sock.rQshift16();
                 var y = this._sock.rQshift16();
                 var width = this._sock.rQshift16();
@@ -1712,22 +1710,22 @@ var RFB;
                         this._display.fillRect(x, y, w, h, this._FBU.background);
                     }
                 } else if (this._FBU.subencoding & 0x01) {  // Raw
-                    this._display.blitImage(x, y, w, h, this._convert_color(sliceUint8(rQi, this._FBU.bytes-1)),0);
+                    this._display.blitImage(x, y, w, h, this._convert_color(sliceUint8(rQi, this._FBU.bytes-1),true),0);
                     rQi += this._FBU.bytes - 1;
                 } else {
                     if (this._FBU.subencoding & 0x02) {  // Background
                         if (this._pixelFormat.Bpp == 1) {
-                            this._FBU.background = this._convert_color(rQ[rQi], true);
+                            this._FBU.background = this._convert_color(rQ[rQi]);
                         } else {
-                            this._FBU.background = this._convert_color([rQ[rQi], rQ[rQi + 1], rQ[rQi + 2], rQ[rQi + 3]],true);
+                            this._FBU.background = this._convert_color([rQ[rQi], rQ[rQi + 1], rQ[rQi + 2], rQ[rQi + 3]]);
                         }
                         rQi += this._pixelFormat.Bpp;
                     }
                     if (this._FBU.subencoding & 0x04) {  // Foreground
                         if (this._pixelFormat.Bpp == 1) {
-                            this._FBU.foreground = this._convert_color(rQ[rQi], true);
+                            this._FBU.foreground = this._convert_color(rQ[rQi]);
                         } else {
-                            this._FBU.foreground = this._convert_color([rQ[rQi], rQ[rQi + 1], rQ[rQi + 2], rQ[rQi + 3]],true);
+                            this._FBU.foreground = this._convert_color([rQ[rQi], rQ[rQi + 1], rQ[rQi + 2], rQ[rQi + 3]]);
                         }
                         rQi += this._pixelFormat.Bpp;
                     }
