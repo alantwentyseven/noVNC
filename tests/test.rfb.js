@@ -1494,15 +1494,15 @@ describe('Remote Frame Buffer Protocol Client', function() {
                         rect.push(0x02 | 0x08 | 0x10); // bg spec, anysubrects, colouredsubrects
                         rect.push32(0xff00ff); // becomes 00ff00ff --> #00FF00 bg color
                         rect.push(2); // 2 subrects
-                        rect.push(0x00); // becomes 0000ffff --> #0000FF fg color
+                        rect.push(0xff); // becomes ff0000ff --> #0000FF fg color
                         rect.push(0x00);
-                        rect.push(0xff);
+                        rect.push(0x00);
                         rect.push(0xff);
                         rect.push(0); // x: 0, y: 0
                         rect.push(1 | (1 << 4)); // width: 2, height: 2
-                        rect.push(0x00); // becomes 0000ffff --> #0000FF fg color
+                        rect.push(0xff); // becomes ff0000ff --> #0000FF fg color
                         rect.push(0x00);
-                        rect.push(0xff);
+                        rect.push(0x00);
                         rect.push(0xff);
                         rect.push(2 | (2 << 4)); // x: 2, y: 2
                         rect.push(1 | (1 << 4)); // width: 2, height: 2

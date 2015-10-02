@@ -1738,7 +1738,7 @@ var RFB;
                         for (var s = 0; s < subrects; s++) {
                             var color;
                             if (this._FBU.subencoding & 0x10) {  // SubrectsColoured
-                                color = this._convert_color(sliceUint8(rQi, this._pixelFormat.Bpp), true);
+                                color = this._convert_color(sliceUint8(rQi, this._pixelFormat.Bpp));
                                 rQi += this._pixelFormat.Bpp;
                             } else {
                                 color = this._FBU.foreground;
@@ -1998,7 +1998,6 @@ var RFB;
                 } else {
                     data = decompress(this._sock.rQshiftBytes(cl_data), uncompressedSize);
                 }
-
                 this._display.blitImage(
                     this._FBU.x, this._FBU.y, this._FBU.width, this._FBU.height, 
                     this._convert_color(data, false, this._pixelFormat.Bdepth), 
